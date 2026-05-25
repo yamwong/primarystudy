@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <!-- 針對 iPad 優化：禁止使用者縮放畫面，確保應用程式感覺像原生 App -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>二年級乘法速算比賽</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Nunito', 'Microsoft JhengHei', sans-serif;
+            touch-action: manipulation; /* 改善觸控反應，防止雙擊縮放 */
+            user-select: none; /* 防止意外選取文字 */
+            -webkit-user-select: none;
+        }
+        .btn-press:active {
+            transform: scale(0.95);
+        }
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        .correct-flash {
+            animation: green-flash 0.3s ease-in-out;
+        }
+        @keyframes green-flash {
+            0% { background-color: white; }
+            50% { background-color: #dcfce7; }
+            100% { background-color: white; }
+        }
+        
+        /* 隱藏原生數字輸入框的上下箭頭 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-blue-100 h-screen w-screen flex items-center justify-center p-4 md:p-8">
+
+    <!-- 主容器 -->
+    <div id="app-container" class="bg-white w-full max-w-2xl h-full max-h-[850px] rounded-3xl shadow-2xl overflow-hidden relative flex flex-col transition-colors duration-300">
+        
+        <!-- ==================== 1. 登入/首頁畫面 ==================== -->
+        <div id="screen-login" class="flex-1 flex flex-col items-center justify-center p-8">
+            <div class="text-yellow-400 text-6xl mb-4">
+                <i class="fa-solid fa-calculator"></i>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-black text-blue-600 mb-2 text-center tracking-wide">
+                二年級乘法速算比賽
+            </h1>
+            <p class="text-gray-500 font-bold mb-8 text-center text-sm md:text-base">雲端數據庫同步版本</p>
+            
+            <div class="w-full max-w-sm space-y-6">
+                <!-- 班別選擇 -->
+                <div>
+                    <label class="block text-gray-700 font-bold mb-2 text-xl">班別：</label>
+                    <div class="relative">
+                        <select id="input-class" 
+                                class="w-full text-2xl border-4 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors font-bold text-gray-800 bg-white appearance-none pr-10 text-center">
+                            <option value="" disabled selected>-- 請選擇班別 --</option>
+                            <option value="2A">2A</option>
+                            <option value="2B">2B</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-blue-500">
+                            <i class="fa-solid fa-chevron-down text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 學號選擇 -->
+                <div>
+                    <label class="block text-gray-700 font-bold mb-2 text-xl">學號：</label>
+                    <div class="relative">
+                        <select id="input-id" 
+                                class="w-full text-2xl border-4 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors font-bold text-gray-800 bg-white appearance-none pr-10 text-center">
+                            <option value="" disabled selected>-- 請選擇學號 --</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-blue-500">
+                            <i class="fa-solid fa-chevron-down text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="startGame()" class="w-full bg-green-500 hover:bg-green-600 text-white font-black text-2xl py-4 rounded-xl shadow-[0_6px_0_#166534] btn-press transition-all mt-4">
+                    開始比賽 <i class="fa-solid fa-play ml-2"></i>
+                </button>
+                
+                <button onclick="promptAdminPassword()" class="w-full bg-orange-400 hover:bg-orange-500 text-white font-bold text-xl py-3 rounded-xl shadow-[0_4px_0_#9a3412] btn-press transition-all">
+                    管理員記錄與排名 <i class="fa-solid fa-lock ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== 2. 管理員登入密碼彈窗 ==================== -->
+        <div id="modal-password" class="hidden absolute inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-6">
+            <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
+                <button onclick="closePasswordModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="text-center mb-6">
+                    <div class="text-orange-500 text-5xl mb-2">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-gray-800">安全驗證</h3>
+                    <p class="text-gray-500 font-bold text-sm">請輸入管理員密碼以查看排名</p>
+                </div>
+                
+                <div class="mb-6">
+                    <input type="password" id="admin-pwd-input" placeholder="請輸入密碼" 
+                           class="w-full text-center text-xl border-4 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-500 font-bold">
+                    <p id="pwd-error-msg" class="text-red-500 font-bold text-sm text-center mt-2 hidden">密碼錯誤，請重試！</p>
+                </div>
+                
+                <button onclick="verifyAdminPassword()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold text-xl py-3 rounded-xl shadow-[0_4px_0_#9a3412] btn-press">
+                    確認送出
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== 3. 遊戲畫面 ==================== -->
+        <div id="screen-game" class="hidden flex-1 flex flex-col h-full">
+            <!-- 頂部資訊欄 -->
+            <div class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md">
+                <div class="text-lg font-bold bg-blue-800 px-3 py-1 rounded-lg">
+                    <i class="fa-solid fa-user"></i> <span id="display-student">2A - 15</span>
+                </div>
+                <div class="text-2xl font-black text-yellow-300">
+                    <i class="fa-solid fa-star"></i> 答對: <span id="score-display">0</span>
+                </div>
+            </div>
+
+            <!-- 時間條 -->
+            <div class="w-full bg-gray-200 h-4">
+                <div id="time-bar" class="bg-red-500 h-4 w-full transition-all duration-1000 ease-linear"></div>
+            </div>
+            <div class="text-center text-red-500 font-black text-2xl mt-2">
+                <i class="fa-solid fa-clock"></i> 剩餘: <span id="time-text">45</span>秒
+            </div>
+
+            <!-- 題目區域 -->
+            <div class="flex-1 flex flex-col items-center justify-center p-4">
+                <div class="text-6xl md:text-8xl font-black text-gray-800 tracking-wider flex items-center gap-4">
+                    <span id="num1">?</span>
+                    <span class="text-blue-500">×</span>
+                    <span id="num2">?</span>
+                    <span class="text-blue-500">=</span>
+                </div>
+                
+                <!-- 答案顯示框 -->
+                <div class="mt-8">
+                    <div id="answer-box" class="w-40 md:w-48 h-20 md:h-24 border-b-8 border-gray-800 flex items-center justify-center text-5xl md:text-6xl font-black text-blue-600 bg-gray-50 rounded-t-xl transition-colors">
+                        <!-- 填寫的數字會顯示在這裡 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 螢幕數字鍵盤 (針對 iPad 觸控優化) -->
+            <div class="bg-gray-100 p-4 md:p-6 pb-8 rounded-t-3xl shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                <div class="grid grid-cols-3 gap-3 md:gap-4 max-w-md mx-auto">
+                    <button onclick="inputNum(1)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">1</button>
+                    <button onclick="inputNum(2)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">2</button>
+                    <button onclick="inputNum(3)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">3</button>
+                    
+                    <button onclick="inputNum(4)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">4</button>
+                    <button onclick="inputNum(5)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">5</button>
+                    <button onclick="inputNum(6)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">6</button>
+                    
+                    <button onclick="inputNum(7)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">7</button>
+                    <button onclick="inputNum(8)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">8</button>
+                    <button onclick="inputNum(9)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">9</button>
+                    
+                    <button onclick="clearInput()" class="bg-red-100 text-red-600 text-xl md:text-2xl font-bold py-4 rounded-xl shadow-md btn-press border-b-4 border-red-200">清除</button>
+                    <button onclick="inputNum(0)" class="bg-white text-3xl font-bold py-4 rounded-xl shadow-md btn-press text-gray-800 border-b-4 border-gray-200">0</button>
+                    <button onclick="deleteInput()" class="bg-yellow-100 text-yellow-600 text-xl md:text-2xl font-bold py-4 rounded-xl shadow-md btn-press border-b-4 border-yellow-200"><i class="fa-solid fa-delete-left"></i></button>
+                </div>
+                
+                <!-- 提交按鈕 -->
+                <div class="max-w-md mx-auto mt-4">
+                    <button onclick="submitAnswer()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-black text-3xl py-4 rounded-2xl shadow-[0_6px_0_#1d4ed8] btn-press transition-all">
+                        提交答案
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 4. 結果畫面 ==================== -->
+        <div id="screen-result" class="hidden flex-1 flex flex-col items-center justify-center p-8 text-center bg-blue-50">
+            <div class="text-6xl text-red-500 mb-2">
+                <i class="fa-solid fa-stopwatch"></i>
+            </div>
+            <h2 class="text-4xl font-black text-gray-800 mb-4">時間到！</h2>
+            
+            <div class="bg-white p-6 rounded-3xl shadow-lg w-full max-w-sm mb-6">
+                <p class="text-gray-500 font-bold mb-2 text-xl" id="result-student-info">2A - 15 號</p>
+                <p class="text-xl text-gray-700 font-bold mb-2">你的成績</p>
+                <p class="text-6xl font-black text-green-500 mb-2" id="final-score">0</p>
+                <p class="text-gray-500 font-bold">題答對</p>
+            </div>
+
+            <!-- 雲端同步狀態提示 -->
+            <div id="upload-status" class="mb-6 flex items-center justify-center gap-2 text-sm font-bold text-gray-500">
+                <i class="fa-solid fa-spinner animate-spin"></i> 正在上傳至雲端數據庫...
+            </div>
+
+            <div class="space-y-4 w-full max-w-sm">
+                <button onclick="startGame()" class="w-full bg-green-500 text-white font-bold text-2xl py-4 rounded-xl shadow-[0_5px_0_#166534] btn-press">
+                    再玩一次 <i class="fa-solid fa-rotate-right ml-2"></i>
+                </button>
+                <button onclick="goHome()" class="w-full bg-gray-400 text-white font-bold text-xl py-3 rounded-xl shadow-[0_4px_0_#4b5563] btn-press">
+                    返回主頁
+                </button>
+            </div>
+        </div>
+
+        <!-- ==================== 5. 管理員記錄與排名畫面 ==================== -->
+        <div id="screen-records" class="hidden flex-1 flex flex-col h-full bg-gray-50 overflow-hidden">
+            <!-- 頂部導航 -->
+            <div class="bg-orange-500 text-white p-4 shadow-md flex justify-between items-center shrink-0">
+                <button onclick="goHome()" class="text-white text-2xl btn-press p-2"><i class="fa-solid fa-chevron-left"></i></button>
+                <h2 class="text-2xl font-black">競賽成績排名榜</h2>
+                <button onclick="fetchRecordsFromTurso()" class="text-white text-xl btn-press p-2" title="更新數據"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+            
+            <!-- 篩選器與控制列 -->
+            <div class="bg-orange-50 p-4 border-b border-orange-100 flex flex-col gap-3 shrink-0">
+                <div class="grid grid-cols-2 gap-2">
+                    <!-- 篩選班別 -->
+                    <div>
+                        <label class="block text-xs font-bold text-orange-700 mb-1">篩選班別：</label>
+                        <select id="filter-class" onchange="renderRecordsList()" class="w-full bg-white border-2 border-orange-200 rounded-lg p-2 font-bold text-gray-700 text-sm focus:outline-none">
+                            <option value="ALL">全部班別 (2A & 2B)</option>
+                            <option value="2A">2A 班</option>
+                            <option value="2B">2B 班</option>
+                        </select>
+                    </div>
+                    <!-- 排序方式 -->
+                    <div>
+                        <label class="block text-xs font-bold text-orange-700 mb-1">排序方式：</label>
+                        <select id="sort-by" onchange="renderRecordsList()" class="w-full bg-white border-2 border-orange-200 rounded-lg p-2 font-bold text-gray-700 text-sm focus:outline-none">
+                            <option value="score_desc">答對數量 (高 → 低)</option>
+                            <option value="time_desc">完成時間 (最新 → 最舊)</option>
+                            <option value="time_asc">完成時間 (最舊 → 最新)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 成績數據列表 -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-600 text-sm">
+                                <th class="p-3 font-bold border-b text-center w-12">排名</th>
+                                <th class="p-3 font-bold border-b text-center">學生身份</th>
+                                <th class="p-3 font-bold border-b text-center">答對題數</th>
+                                <th class="p-3 font-bold border-b text-center">完成時間</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-table-body" class="text-sm">
+                            <!-- 由 JS 生成 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 無記錄提示 -->
+                <div id="no-records-msg" class="hidden text-center text-gray-400 mt-10 font-bold text-xl">
+                    <i class="fa-solid fa-box-open text-4xl mb-3 block"></i>
+                    暫無比賽記錄
+                </div>
+            </div>
+            
+            <!-- 底部動作 -->
+            <div class="p-4 bg-white border-t border-gray-200 shrink-0 flex gap-2">
+                <button onclick="clearRecordsConfirm()" class="flex-1 bg-red-100 text-red-600 font-bold text-base py-3 rounded-xl hover:bg-red-200 transition-colors btn-press">
+                    <i class="fa-solid fa-trash-can mr-1"></i> 清除資料庫所有記錄
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Turso 數據庫連接配置 ---
+        const TURSO_URL = "libsql://p3-math-yam2.aws-ap-northeast-1.turso.io";
+        const TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3Nzk2OTQwMjAsImlkIjoiMDE5ZDk1MWUtZTgwMS03ZjU1LTg5OWUtZDI1YTVhNzY4MjU2IiwicmlkIjoiMmFlOTU2YTUtZTYxZi00Y2U0LTkxYTYtNmE3Mjg2NTc4ZDFkIn0.GiuVceCb8FLdMm8Ax3u6DXDh-0r-a-oeZFJU4nk49XX9K6d0SB859wdDnK-duai7wr701BeX4fyOdh9Vw09ZCA";
+        
+        // 將 libsql:// 轉為 https:// 格式以便進行 HTTP API 呼叫
+        const TURSO_HTTP_URL = TURSO_URL.replace("libsql://", "https://");
+
+        // --- 狀態變數 ---
+        const GAME_DURATION = 45; // 遊戲時間 (秒)
+        let timer;
+        let timeLeft = 0;
+        let score = 0;
+        let currentNum1 = 0;
+        let currentNum2 = 0;
+        let currentAnswer = "";
+        
+        let studentClass = "";
+        let studentId = "";
+
+        // 下載快取的排名數據
+        let cachedRecords = [];
+
+        // --- DOM 元素參考 ---
+        const screens = {
+            login: document.getElementById('screen-login'),
+            game: document.getElementById('screen-game'),
+            result: document.getElementById('screen-result'),
+            records: document.getElementById('screen-records')
+        };
+        const appContainer = document.getElementById('app-container');
+        const answerBox = document.getElementById('answer-box');
+        
+        // --- 頁面初始設定 ---
+        window.onload = function() {
+            // 初始化數據庫表格
+            initDatabaseTable();
+        };
+
+        // --- 導航控制 ---
+        function showScreen(screenName) {
+            for (let key in screens) {
+                screens[key].classList.add('hidden');
+            }
+            screens[screenName].classList.remove('hidden');
+        }
+
+        function goHome() {
+            showScreen('login');
+        }
+
+        // --- Turso HTTP API 核心請求封裝 ---
+        async function executeTursoQuery(statements) {
+            try {
+                const response = await fetch(`${TURSO_HTTP_URL}/v2/pipeline`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${TURSO_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        requests: statements.map(sql => ({
+                            type: 'execute',
+                            stmt: { sql: sql }
+                        }))
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP 錯誤: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.results;
+            } catch (error) {
+                console.error("Turso 連接失敗:", error);
+                throw error;
+            }
+        }
+
+        // --- 初始化數據庫表格 (如果不存在則建立) ---
+        async function initDatabaseTable() {
+            const createTableSql = `
+                CREATE TABLE IF NOT EXISTS multiplication_contest (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    class_name TEXT NOT NULL,
+                    student_id INTEGER NOT NULL,
+                    score INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            `;
+            try {
+                await executeTursoQuery([createTableSql]);
+                console.log("數據表初始化成功或已存在");
+            } catch (err) {
+                console.error("無法初始化數據庫:", err);
+            }
+        }
+
+        // --- 遊戲邏輯 ---
+        function startGame() {
+            // 獲取並驗證下拉選單
+            studentClass = document.getElementById('input-class').value;
+            studentId = document.getElementById('input-id').value;
+
+            if (!studentClass || !studentId) {
+                alert("請先選擇班別和學號！");
+                return;
+            }
+
+            // 初始化遊戲狀態
+            score = 0;
+            timeLeft = GAME_DURATION;
+            currentAnswer = "";
+            
+            document.getElementById('display-student').innerText = `${studentClass} - ${studentId} 號`;
+            document.getElementById('score-display').innerText = score;
+            updateTimerDisplay();
+            
+            showScreen('game');
+            generateQuestion();
+            updateAnswerBox();
+
+            // 啟動計時器
+            clearInterval(timer);
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function generateQuestion() {
+            // 產生 2-9 之間的隨機數
+            currentNum1 = Math.floor(Math.random() * 8) + 2; 
+            currentNum2 = Math.floor(Math.random() * 8) + 2; 
+            
+            document.getElementById('num1').innerText = currentNum1;
+            document.getElementById('num2').innerText = currentNum2;
+            
+            currentAnswer = "";
+            updateAnswerBox();
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById('time-text').innerText = timeLeft;
+            
+            // 更新進度條寬度和顏色
+            const percentage = (timeLeft / GAME_DURATION) * 100;
+            const timeBar = document.getElementById('time-bar');
+            timeBar.style.width = `${percentage}%`;
+            
+            if (percentage > 50) {
+                timeBar.className = "h-4 transition-all duration-1000 ease-linear bg-green-500";
+            } else if (percentage > 20) {
+                timeBar.className = "h-4 transition-all duration-1000 ease-linear bg-yellow-400";
+            } else {
+                timeBar.className = "h-4 transition-all duration-1000 ease-linear bg-red-500";
+            }
+        }
+
+        // --- 鍵盤輸入邏輯 ---
+        function inputNum(num) {
+            if (currentAnswer.length < 3) {
+                currentAnswer += num.toString();
+                updateAnswerBox();
+            }
+        }
+
+        function clearInput() {
+            currentAnswer = "";
+            updateAnswerBox();
+        }
+
+        function deleteInput() {
+            if (currentAnswer.length > 0) {
+                currentAnswer = currentAnswer.slice(0, -1);
+                updateAnswerBox();
+            }
+        }
+
+        function updateAnswerBox() {
+            answerBox.innerText = currentAnswer;
+            if(currentAnswer === "") {
+                answerBox.innerHTML = "&nbsp;"; 
+            }
+        }
+
+        // --- 提交與判斷 ---
+        function submitAnswer() {
+            if (currentAnswer === "") return;
+
+            const playerAns = parseInt(currentAnswer);
+            const correctAns = currentNum1 * currentNum2;
+
+            if (playerAns === correctAns) {
+                score++;
+                document.getElementById('score-display').innerText = score;
+                
+                appContainer.classList.add('correct-flash');
+                setTimeout(() => { appContainer.classList.remove('correct-flash'); }, 300);
+                
+                generateQuestion();
+            } else {
+                answerBox.classList.add('shake', 'text-red-500', 'border-red-500');
+                answerBox.classList.remove('text-blue-600', 'border-gray-800');
+                
+                setTimeout(() => {
+                    answerBox.classList.remove('shake', 'text-red-500', 'border-red-500');
+                    answerBox.classList.add('text-blue-600', 'border-gray-800');
+                    clearInput();
+                }, 400);
+            }
+        }
+
+        // --- 結束與數據庫同步 ---
+        function endGame() {
+            clearInterval(timer);
+            
+            document.getElementById('result-student-info').innerText = `${studentClass} - ${studentId} 號`;
+            document.getElementById('final-score').innerText = score;
+            
+            showScreen('result');
+            
+            // 執行數據庫寫入
+            uploadScoreToTurso(studentClass, parseInt(studentId), score);
+        }
+
+        async function uploadScoreToTurso(cls, id, scr) {
+            const statusDiv = document.getElementById('upload-status');
+            statusDiv.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 正在上傳至雲端數據庫...`;
+            statusDiv.className = "mb-6 flex items-center justify-center gap-2 text-sm font-bold text-blue-500";
+
+            // 在 2026-05-25 的背景下獲取當前時間格式
+            const timestamp = new Date().toISOString();
+            const insertSql = `
+                INSERT INTO multiplication_contest (class_name, student_id, score, created_at)
+                VALUES ('${cls}', ${id}, ${scr}, '${timestamp}');
+            `;
+
+            try {
+                await executeTursoQuery([insertSql]);
+                statusDiv.innerHTML = `<i class="fa-solid fa-circle-check text-green-500"></i> 上傳成功！已同步至雲端`;
+                statusDiv.className = "mb-6 flex items-center justify-center gap-2 text-sm font-bold text-green-600";
+            } catch (err) {
+                console.error("上傳失敗:", err);
+                statusDiv.innerHTML = `<i class="fa-solid fa-circle-exclamation text-red-500"></i> 上傳失敗！暫存於本機。`;
+                statusDiv.className = "mb-6 flex items-center justify-center gap-2 text-sm font-bold text-red-600";
+                
+                // 本機備份儲存 (以防萬一斷網)
+                let localBackups = JSON.parse(localStorage.getItem('turso_backups')) || [];
+                localBackups.push({ class_name: cls, student_id: id, score: scr, created_at: timestamp });
+                localStorage.setItem('turso_backups', JSON.stringify(localBackups));
+            }
+        }
+
+        // --- 管理員密碼保護功能 ---
+        function promptAdminPassword() {
+            document.getElementById('admin-pwd-input').value = "";
+            document.getElementById('pwd-error-msg').classList.add('hidden');
+            document.getElementById('modal-password').classList.remove('hidden');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('modal-password').classList.add('hidden');
+        }
+
+        function verifyAdminPassword() {
+            const pwdInput = document.getElementById('admin-pwd-input').value;
+            if (pwdInput === "admin1234") {
+                closePasswordModal();
+                fetchRecordsFromTurso(); // 通過驗證後下載數據
+            } else {
+                document.getElementById('pwd-error-msg').classList.remove('hidden');
+            }
+        }
+
+        // 支援管理員密碼輸入框按 Enter 鍵確認
+        document.getElementById('admin-pwd-input')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') verifyAdminPassword();
+        });
+
+        // --- 從 Turso 下載所有紀錄 ---
+        async function fetchRecordsFromTurso() {
+            showScreen('records');
+            const tbody = document.getElementById('records-table-body');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="p-8 text-center text-gray-500 font-bold">
+                        <i class="fa-solid fa-spinner animate-spin mr-2"></i> 正在載入雲端數據...
+                    </td>
+                </tr>
+            `;
+
+            const selectSql = `SELECT class_name, student_id, score, created_at FROM multiplication_contest;`;
+            try {
+                const results = await executeTursoQuery([selectSql]);
+                const resultObj = results[0];
+                
+                if (resultObj && resultObj.active && resultObj.response && resultObj.response.rows) {
+                    const rows = resultObj.response.rows;
+                    const cols = resultObj.response.cols;
+
+                    // 將 rows 陣列轉成好處理的物件格式
+                    cachedRecords = rows.map(row => {
+                        let record = {};
+                        row.forEach((val, i) => {
+                            // 獲取欄位名，根據格式進行轉換
+                            const colName = cols[i].name;
+                            record[colName] = val.value !== undefined ? val.value : val;
+                        });
+                        return record;
+                    });
+                } else {
+                    cachedRecords = [];
+                }
+
+                renderRecordsList();
+
+            } catch (err) {
+                console.error("載入排名失敗:", err);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="p-8 text-center text-red-500 font-bold">
+                            <i class="fa-solid fa-circle-exclamation mr-2"></i> 載入失敗，請檢查網路連線。
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // --- 渲染並排序、篩選排名清單 ---
+        function renderRecordsList() {
+            const tbody = document.getElementById('records-table-body');
+            const noRecordsMsg = document.getElementById('no-records-msg');
+            const filterClass = document.getElementById('filter-class').value;
+            const sortBy = document.getElementById('sort-by').value;
+
+            // 1. 篩選數據
+            let displayData = [...cachedRecords];
+            if (filterClass !== "ALL") {
+                displayData = displayData.filter(item => item.class_name === filterClass);
+            }
+
+            // 2. 排序數據
+            if (sortBy === "score_desc") {
+                // 先按分數排，分數相同再按時間排序（先達成的在前）
+                displayData.sort((a, b) => {
+                    const scoreA = parseInt(a.score);
+                    const scoreB = parseInt(b.score);
+                    if (scoreB !== scoreA) {
+                        return scoreB - scoreA;
+                    }
+                    return new Date(a.created_at) - new Date(b.created_at);
+                });
+            } else if (sortBy === "time_desc") {
+                displayData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            } else if (sortBy === "time_asc") {
+                displayData.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            }
+
+            // 3. 渲染至畫面上
+            tbody.innerHTML = '';
+            
+            if (displayData.length === 0) {
+                noRecordsMsg.classList.remove('hidden');
+                return;
+            }
+            noRecordsMsg.classList.add('hidden');
+
+            displayData.forEach((row, index) => {
+                // 本地時區轉換
+                const utcDate = new Date(row.created_at);
+                const localTimeStr = isNaN(utcDate.getTime()) ? '未知時間' : 
+                    `${utcDate.getMonth() + 1}/${utcDate.getDate()} ${utcDate.getHours().toString().padStart(2, '0')}:${utcDate.getMinutes().toString().padStart(2, '0')}`;
+
+                // 排名標章與文字特效
+                let rankMarkup = `${index + 1}`;
+                if (sortBy === "score_desc") {
+                    if (index === 0) rankMarkup = `<span class="bg-yellow-400 text-white rounded-full w-7 h-7 inline-flex items-center justify-center font-black shadow-sm"><i class="fa-solid fa-trophy text-xs"></i></span>`;
+                    else if (index === 1) rankMarkup = `<span class="bg-slate-300 text-white rounded-full w-7 h-7 inline-flex items-center justify-center font-black shadow-sm">2</span>`;
+                    else if (index === 2) rankMarkup = `<span class="bg-amber-600 text-white rounded-full w-7 h-7 inline-flex items-center justify-center font-black shadow-sm">3</span>`;
+                }
+
+                const scoreHighlight = parseInt(row.score) >= 15 ? 'text-green-600 font-black' : 'text-gray-800 font-bold';
+
+                const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                tr.innerHTML = `
+                    <td class="p-3 border-b text-center font-bold text-gray-500">${rankMarkup}</td>
+                    <td class="p-3 border-b text-center font-extrabold text-gray-800">${row.class_name} - ${row.student_id}號</td>
+                    <td class="p-3 border-b text-center text-lg ${scoreHighlight}">${row.score} 題</td>
+                    <td class="p-3 border-b text-center text-xs text-gray-400 font-semibold">${localTimeStr}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- 清空資料庫全部記錄確認 ---
+        async function clearRecordsConfirm() {
+            const verifyText = prompt("注意！這會永久刪除雲端資料庫中的所有學生成績記錄！\n\n如果確定，請在下方輸入： DELETE");
+            if (verifyText === "DELETE" || verifyText === "delete") {
+                const deleteSql = `DELETE FROM multiplication_contest;`;
+                try {
+                    await executeTursoQuery([deleteSql]);
+                    alert("資料庫已成功清空！");
+                    fetchRecordsFromTurso(); // 重新整理清單
+                } catch (err) {
+                    alert("刪除失敗，請檢查網絡連線或權限設定！");
+                }
+            } else if (verifyText !== null) {
+                alert("輸入錯誤，取消操作。");
+            }
+        }
+
+        // --- 實體鍵盤支援 ---
+        document.addEventListener('keydown', (e) => {
+            if (screens.game.classList.contains('hidden')) return; // 只在遊戲中有效
+            
+            if (e.key >= '0' && e.key <= '9') {
+                inputNum(parseInt(e.key));
+            } else if (e.key === 'Backspace') {
+                deleteInput();
+            } else if (e.key === 'Enter') {
+                submitAnswer();
+            } else if (e.key === 'Escape' || e.key === 'Delete') {
+                clearInput();
+            }
+        });
+
+    </script>
+</body>
+</html>
